@@ -1,0 +1,9 @@
+{
+  "ultima_execucao": "2026-08-06",
+  "fase_detectada": "mvp",
+  "regime_tributario": "nao_detectado",
+  "score": 100.0,
+  "threshold": 70.0,
+  "lacunas": [],
+  "evolucao": "100.0 -> 100.0 (mantido)"
+}

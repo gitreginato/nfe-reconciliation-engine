@@ -1,0 +1,876 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "label": "Project",
+      "name": "Contabilidade NF-e",
+      "qualified_name": "project:contabilidade-nf-e",
+      "properties": {
+        "description": "Sistema de importacao, reconciliacao e ecd"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 2,
+      "label": "Module",
+      "name": "src/config.py",
+      "qualified_name": "module:src-config-py",
+      "properties": {
+        "path": "src/config.py",
+        "layer": "config"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 3,
+      "label": "Module",
+      "name": "src/importador/dfe.py",
+      "qualified_name": "module:src-importador-dfe-py",
+      "properties": {
+        "path": "src/importador/dfe.py",
+        "layer": "importador"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 4,
+      "label": "Module",
+      "name": "src/importador/manifestacao.py",
+      "qualified_name": "module:src-importador-manifestacao-py",
+      "properties": {
+        "path": "src/importador/manifestacao.py",
+        "layer": "importador"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 5,
+      "label": "Module",
+      "name": "src/importador/validador_xml.py",
+      "qualified_name": "module:src-importador-validador-xml-py",
+      "properties": {
+        "path": "src/importador/validador_xml.py",
+        "layer": "importador"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 6,
+      "label": "Module",
+      "name": "src/importador/rate_limit.py",
+      "qualified_name": "module:src-importador-rate-limit-py",
+      "properties": {
+        "path": "src/importador/rate_limit.py",
+        "layer": "importador"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 7,
+      "label": "Module",
+      "name": "src/reconciliacao/motor.py",
+      "qualified_name": "module:src-reconciliacao-motor-py",
+      "properties": {
+        "path": "src/reconciliacao/motor.py",
+        "layer": "reconciliacao"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 8,
+      "label": "Module",
+      "name": "src/reconciliacao/gerador_pedidos.py",
+      "qualified_name": "module:src-reconciliacao-gerador-pedidos-py",
+      "properties": {
+        "path": "src/reconciliacao/gerador_pedidos.py",
+        "layer": "reconciliacao"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 9,
+      "label": "Module",
+      "name": "src/contabilidade/gerador.py",
+      "qualified_name": "module:src-contabilidade-gerador-py",
+      "properties": {
+        "path": "src/contabilidade/gerador.py",
+        "layer": "contabilidade"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 10,
+      "label": "Module",
+      "name": "src/contabilidade/ecd.py",
+      "qualified_name": "module:src-contabilidade-ecd-py",
+      "properties": {
+        "path": "src/contabilidade/ecd.py",
+        "layer": "contabilidade"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 11,
+      "label": "Module",
+      "name": "src/fiscal/validadores.py",
+      "qualified_name": "module:src-fiscal-validadores-py",
+      "properties": {
+        "path": "src/fiscal/validadores.py",
+        "layer": "fiscal"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 12,
+      "label": "Module",
+      "name": "src/fiscal/calculo.py",
+      "qualified_name": "module:src-fiscal-calculo-py",
+      "properties": {
+        "path": "src/fiscal/calculo.py",
+        "layer": "fiscal"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 13,
+      "label": "Module",
+      "name": "src/fiscal/apuracao.py",
+      "qualified_name": "module:src-fiscal-apuracao-py",
+      "properties": {
+        "path": "src/fiscal/apuracao.py",
+        "layer": "fiscal"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 14,
+      "label": "Module",
+      "name": "src/persistencia/models.py",
+      "qualified_name": "module:src-persistencia-models-py",
+      "properties": {
+        "path": "src/persistencia/models.py",
+        "layer": "persistencia"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 15,
+      "label": "Module",
+      "name": "src/mock_sefaz/main.py",
+      "qualified_name": "module:src-mock-sefaz-main-py",
+      "properties": {
+        "path": "src/mock_sefaz/main.py",
+        "layer": "mock_sefaz"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 16,
+      "label": "Module",
+      "name": "src/mock_sefaz/pool_nfe.py",
+      "qualified_name": "module:src-mock-sefaz-pool-nfe-py",
+      "properties": {
+        "path": "src/mock_sefaz/pool_nfe.py",
+        "layer": "mock_sefaz"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 17,
+      "label": "Module",
+      "name": "src/dashboard/main.py",
+      "qualified_name": "module:src-dashboard-main-py",
+      "properties": {
+        "path": "src/dashboard/main.py",
+        "layer": "dashboard"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 18,
+      "label": "Config",
+      "name": "contabil-gate",
+      "qualified_name": "config:contabil-gate",
+      "properties": {
+        "type": "gate",
+        "path": ".devin/skills/contabil-gate/SKILL.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 19,
+      "label": "Config",
+      "name": "legislativo-gate",
+      "qualified_name": "config:legislativo-gate",
+      "properties": {
+        "type": "gate",
+        "path": ".devin/skills/legislativo-gate/SKILL.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 20,
+      "label": "Config",
+      "name": "ponytail-gate",
+      "qualified_name": "config:ponytail-gate",
+      "properties": {
+        "type": "gate",
+        "desc": "Minimalismo e zero deps desnecessarias"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 21,
+      "label": "Config",
+      "name": "autoresearch-gate",
+      "qualified_name": "config:autoresearch-gate",
+      "properties": {
+        "type": "gate",
+        "desc": "Otimizacao e baseline de performance"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 22,
+      "label": "Config",
+      "name": "improve-gate",
+      "qualified_name": "config:improve-gate",
+      "properties": {
+        "type": "gate",
+        "desc": "Auditoria senior e rastreabilidade de lacunas"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 23,
+      "label": "Config",
+      "name": "secure-code-gate",
+      "qualified_name": "config:secure-code-gate",
+      "properties": {
+        "type": "gate",
+        "desc": "Conformidade OWASP e sanitizacao"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 24,
+      "label": "Config",
+      "name": "nlp-gate",
+      "qualified_name": "config:nlp-gate",
+      "properties": {
+        "type": "gate",
+        "desc": "Qualidade de linguagem natural e documentacao"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 25,
+      "label": "Config",
+      "name": "copy-gate",
+      "qualified_name": "config:copy-gate",
+      "properties": {
+        "type": "gate",
+        "desc": "Copywriting e comunicacao"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 26,
+      "label": "Document",
+      "name": "docs/spec.md",
+      "qualified_name": "document:docs-spec-md",
+      "properties": {
+        "path": "docs/spec.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 27,
+      "label": "Document",
+      "name": "docs/spec-testes.md",
+      "qualified_name": "document:docs-spec-testes-md",
+      "properties": {
+        "path": "docs/spec-testes.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 28,
+      "label": "Document",
+      "name": "docs/observability-contract.md",
+      "qualified_name": "document:docs-observability-contract-md",
+      "properties": {
+        "path": "docs/observability-contract.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 29,
+      "label": "Document",
+      "name": "docs/relatorio-gates.md",
+      "qualified_name": "document:docs-relatorio-gates-md",
+      "properties": {
+        "path": "docs/relatorio-gates.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 30,
+      "label": "Document",
+      "name": "docs/relatorio-lacunas-contabeis-legislativas.md",
+      "qualified_name": "document:docs-relatorio-lacunas-contabeis-legislativas-md",
+      "properties": {
+        "path": "docs/relatorio-lacunas-contabeis-legislativas.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 31,
+      "label": "Document",
+      "name": "docs/threat-model.md",
+      "qualified_name": "document:docs-threat-model-md",
+      "properties": {
+        "path": "docs/threat-model.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 32,
+      "label": "File",
+      "name": "tests/unit/test_gate_contracts.py",
+      "qualified_name": "file:tests-unit-test-gate-contracts-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 33,
+      "label": "File",
+      "name": "tests/unit/test_validadores.py",
+      "qualified_name": "file:tests-unit-test-validadores-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 34,
+      "label": "File",
+      "name": "tests/unit/test_calculo_tributario.py",
+      "qualified_name": "file:tests-unit-test-calculo-tributario-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 35,
+      "label": "File",
+      "name": "tests/unit/test_ecd.py",
+      "qualified_name": "file:tests-unit-test-ecd-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 36,
+      "label": "File",
+      "name": "tests/unit/test_gerador.py",
+      "qualified_name": "file:tests-unit-test-gerador-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 37,
+      "label": "File",
+      "name": "tests/unit/test_manifestacao.py",
+      "qualified_name": "file:tests-unit-test-manifestacao-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 38,
+      "label": "File",
+      "name": "tests/unit/test_validador_xml.py",
+      "qualified_name": "file:tests-unit-test-validador-xml-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 39,
+      "label": "File",
+      "name": "tests/unit/test_apuracao.py",
+      "qualified_name": "file:tests-unit-test-apuracao-py",
+      "properties": {
+        "type": "test_unit"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 40,
+      "label": "File",
+      "name": "tests/integration/test_cenarios_reais.py",
+      "qualified_name": "file:tests-integration-test-cenarios-reais-py",
+      "properties": {
+        "type": "test_integration"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 41,
+      "label": "File",
+      "name": "tests/integration/test_rate_limit.py",
+      "qualified_name": "file:tests-integration-test-rate-limit-py",
+      "properties": {
+        "type": "test_integration"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 42,
+      "label": "File",
+      "name": "tests/integration/test_sistema.py",
+      "qualified_name": "file:tests-integration-test-sistema-py",
+      "properties": {
+        "type": "test_integration"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 43,
+      "label": "Document",
+      "name": "docs/checklist-lado-empresa.md",
+      "qualified_name": "document:docs-checklist-lado-empresa-md",
+      "properties": {
+        "path": "docs/checklist-lado-empresa.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 44,
+      "label": "Document",
+      "name": "docs/guia-simples.md",
+      "qualified_name": "document:docs-guia-simples-md",
+      "properties": {
+        "path": "docs/guia-simples.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 45,
+      "label": "Document",
+      "name": "docs/kanban.md",
+      "qualified_name": "document:docs-kanban-md",
+      "properties": {
+        "path": "docs/kanban.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 46,
+      "label": "Document",
+      "name": "docs/plano-acessos-e-rag.md",
+      "qualified_name": "document:docs-plano-acessos-e-rag-md",
+      "properties": {
+        "path": "docs/plano-acessos-e-rag.md"
+      },
+      "provenance": "EXTRACTED"
+    },
+    {
+      "id": 47,
+      "label": "Document",
+      "name": "docs/plano-demo-entrevista.md",
+      "qualified_name": "document:docs-plano-demo-entrevista-md",
+      "properties": {
+        "path": "docs/plano-demo-entrevista.md"
+      },
+      "provenance": "EXTRACTED"
+    }
+  ],
+  "edges": [
+    {
+      "source": 1,
+      "target": 11,
+      "type": "HAS_MODULE",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 1,
+      "target": 12,
+      "type": "HAS_MODULE",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 1,
+      "target": 9,
+      "type": "HAS_MODULE",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 1,
+      "target": 10,
+      "type": "HAS_MODULE",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "type": "HAS_MODULE",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 1,
+      "target": 7,
+      "type": "HAS_MODULE",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 12,
+      "target": 11,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 13,
+      "target": 12,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 9,
+      "target": 11,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 10,
+      "target": 9,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 7,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 18,
+      "target": 9,
+      "type": "MONITORS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 18,
+      "target": 10,
+      "type": "MONITORS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 18,
+      "target": 12,
+      "type": "MONITORS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 19,
+      "target": 11,
+      "type": "MONITORS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 19,
+      "target": 4,
+      "type": "MONITORS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 19,
+      "target": 3,
+      "type": "MONITORS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 32,
+      "target": 18,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 32,
+      "target": 19,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 33,
+      "target": 11,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 34,
+      "target": 12,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 35,
+      "target": 10,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 40,
+      "target": 1,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 36,
+      "target": 9,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 37,
+      "target": 4,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 38,
+      "target": 5,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 39,
+      "target": 13,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 41,
+      "target": 6,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 42,
+      "target": 17,
+      "type": "TESTS",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 13,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 4,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 8,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 9,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 10,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 7,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 3,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 17,
+      "target": 2,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 4,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 4,
+      "target": 3,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 4,
+      "target": 11,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 8,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 9,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 10,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 13,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 12,
+      "target": 14,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    },
+    {
+      "source": 15,
+      "target": 16,
+      "type": "USES",
+      "provenance": "EXTRACTED",
+      "weight": 1.0,
+      "properties": {}
+    }
+  ]
+}

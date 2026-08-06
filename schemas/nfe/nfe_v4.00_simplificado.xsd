@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Schema XSD simplificado para NF-e 4.00 (Pacote 010b v1.30).
+     Este schema valida a estrutura básica de uma NF-e. NÃO substitui o
+     schema oficial da Receita (~200 arquivos interdependentes). Para
+     validação completa, baixar o Pacote de Liberação 010b da SEFAZ. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.portalfiscal.inf.br/nfe"
+           targetNamespace="http://www.portalfiscal.inf.br/nfe"
+           elementFormDefault="qualified">
+
+  <!-- Elemento raiz NFe -->
+  <xs:element name="NFe">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="infNFe"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- infNFe -->
+  <xs:element name="infNFe">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ide"/>
+        <xs:element ref="emit"/>
+        <xs:element ref="dest" minOccurs="0"/>
+        <xs:element ref="det" maxOccurs="990"/>
+        <xs:element ref="total"/>
+        <xs:element ref="transp" minOccurs="0"/>
+        <xs:element ref="pag" minOccurs="0" maxOccurs="100"/>
+      </xs:sequence>
+      <xs:attribute name="versao" type="xs:string" use="required"/>
+      <xs:attribute name="Id" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ide -->
+  <xs:element name="ide">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="cUF" type="xs:string"/>
+        <xs:element name="natOp" type="xs:string"/>
+        <xs:element name="mod" type="xs:string"/>
+        <xs:element name="serie" type="xs:string"/>
+        <xs:element name="nNF" type="xs:string"/>
+        <xs:element name="dhEmi" type="xs:string"/>
+        <xs:element name="tpNF" type="xs:string"/>
+        <xs:element name="idDest" type="xs:string"/>
+        <xs:element name="cMunFG" type="xs:string"/>
+        <xs:element name="tpImp" type="xs:string"/>
+        <xs:element name="tpEmis" type="xs:string"/>
+        <xs:element name="cDV" type="xs:string"/>
+        <xs:element name="tpAmb" type="xs:string"/>
+        <xs:element name="finNFe" type="xs:string"/>
+        <xs:element name="indFinal" type="xs:string"/>
+        <xs:element name="indPres" type="xs:string"/>
+        <xs:element name="procEmi" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- emit -->
+  <xs:element name="emit">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="CNPJ" type="xs:string" minOccurs="0"/>
+        <xs:element name="CPF" type="xs:string" minOccurs="0"/>
+        <xs:element name="xNome" type="xs:string"/>
+        <xs:element ref="enderEmit"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- enderEmit -->
+  <xs:element name="enderEmit">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="xLgr" type="xs:string"/>
+        <xs:element name="nro" type="xs:string" minOccurs="0"/>
+        <xs:element name="xBairro" type="xs:string"/>
+        <xs:element name="cMun" type="xs:string"/>
+        <xs:element name="xMun" type="xs:string"/>
+        <xs:element name="UF" type="xs:string"/>
+        <xs:element name="CEP" type="xs:string" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- dest -->
+  <xs:element name="dest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="CNPJ" type="xs:string" minOccurs="0"/>
+        <xs:element name="CPF" type="xs:string" minOccurs="0"/>
+        <xs:element name="xNome" type="xs:string"/>
+        <xs:element ref="enderDest" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- enderDest -->
+  <xs:element name="enderDest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="xLgr" type="xs:string"/>
+        <xs:element name="xBairro" type="xs:string"/>
+        <xs:element name="cMun" type="xs:string"/>
+        <xs:element name="xMun" type="xs:string"/>
+        <xs:element name="UF" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- det (item) -->
+  <xs:element name="det">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="prod"/>
+        <xs:element ref="imposto"/>
+      </xs:sequence>
+      <xs:attribute name="nItem" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- prod -->
+  <xs:element name="prod">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="cProd" type="xs:string"/>
+        <xs:element name="xProd" type="xs:string"/>
+        <xs:element name="NCM" type="xs:string"/>
+        <xs:element name="CFOP" type="xs:string"/>
+        <xs:element name="uCom" type="xs:string"/>
+        <xs:element name="qCom" type="xs:string"/>
+        <xs:element name="vUnCom" type="xs:string"/>
+        <xs:element name="vProd" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- imposto -->
+  <xs:element name="imposto">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- total -->
+  <xs:element name="total">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ICMSTot"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ICMSTot -->
+  <xs:element name="ICMSTot">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="vNF" type="xs:string"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- transp -->
+  <xs:element name="transp">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- pag -->
+  <xs:element name="pag">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
