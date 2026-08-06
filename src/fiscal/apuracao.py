@@ -39,7 +39,7 @@ class ApuracaoImposto:
     notas_entrada: int = 0
     notas_saida: int = 0
     valor_contabil_entradas: Decimal = Decimal("0")
-    valor_contabil_saidas: Decimal("0") = Decimal("0")
+    valor_contabil_saidas: Decimal = Decimal("0")
 
     def calcular_saldo(self):
         """Calcula o saldo final (débitos - créditos)."""
