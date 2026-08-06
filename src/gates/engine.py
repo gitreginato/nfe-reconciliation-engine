@@ -254,7 +254,7 @@ class AdaptiveGate:
             if ctrl.check:
                 try:
                     result, details = ctrl.check(ctx)
-                except Exception as e:
+                except (RuntimeError, ValueError, AttributeError, TypeError, OSError) as e:
                     result, details = CheckResult.FAIL, f"Erro na verificação: {e}"
             else:
                 result, details = CheckResult.PASS_WITH_ISSUES, "Sem verificação automática"
@@ -285,8 +285,9 @@ def detect_context(project_path: str = ".", environment: Environment = Environme
             if f.endswith(".py"):
                 fpath = os.path.join(root, f)
                 try:
-                    content = open(fpath, encoding="utf-8").read()
-                except Exception:
+                    with open(fpath, encoding="utf-8") as fh:
+                        content = fh.read()
+                except OSError:
                     continue
 
                 if "nfe" in content.lower() or "NF-e" in content or "chave_acesso" in content:

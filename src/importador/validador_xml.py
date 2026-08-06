@@ -82,6 +82,7 @@ def validar_xml_nfe(xml_str: str) -> ResultadoValidacao:
         else:
             root = ET.fromstring(xml_str)
     except Exception as e:
+        # ParseError (stdlib), XMLSyntaxError (lxml), DefusedXmlException, etc.
         resultado.valido = False
         resultado.erros.append(f"XML mal formado: {e}")
         logger.warning(f"XML mal formado rejeitado: {e}")
@@ -327,6 +328,7 @@ def validar_com_xsd_oficial(xml_str: str, xsd_path: str) -> ResultadoValidacao:
                 resultado.erros.append(f"Linha {error.line}: {error.message}")
             resultado.valido = False
     except Exception as e:
+        # XMLSyntaxError (lxml), OSError, ValueError podem ocorrer na validacao XSD
         resultado.valido = False
         resultado.erros.append(f"Erro ao validar XSD: {e}")
 

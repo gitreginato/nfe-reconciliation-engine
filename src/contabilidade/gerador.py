@@ -7,6 +7,7 @@ from datetime import datetime, date
 from decimal import Decimal
 import logging
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.persistencia.models import (
     Nfe, Reconciliacao, LancamentoContabil, PlanoContas,
@@ -265,7 +266,7 @@ class GeradorLancamentos:
             try:
                 estornos = self.estornar_nfe(nfe)
                 stats["estornos"] += estornos
-            except Exception as e:
+            except (SQLAlchemyError, ValueError, RuntimeError) as e:
                 self.session.rollback()
                 logger.error(f"Erro ao estornar NF-e {nfe.chave_acesso[:20]}...: {e}")
                 stats["erros"] += 1
@@ -284,7 +285,7 @@ class GeradorLancamentos:
                     stats["lancamentos_gerados"] += len(lancs)
                 else:
                     stats["notas_puladas"] += 1
-            except Exception as e:
+            except (SQLAlchemyError, ValueError, RuntimeError) as e:
                 self.session.rollback()
                 logger.error(f"Erro ao gerar lançamentos para NF-e {nfe.chave_acesso[:20]}...: {e}")
                 stats["erros"] += 1

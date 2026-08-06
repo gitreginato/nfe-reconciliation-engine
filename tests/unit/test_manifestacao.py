@@ -146,7 +146,7 @@ class TestManifestarLote:
                    chave_suffix="01")
 
         mock_importador = MagicMock()
-        mock_importador.manifestar.side_effect = Exception("Erro de rede")
+        mock_importador.manifestar.side_effect = RuntimeError("Erro de rede")
         mock_importador_cls.return_value = mock_importador
 
         stats = manifestar_lote(session, "ciencia_emissao")

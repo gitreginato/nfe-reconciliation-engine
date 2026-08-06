@@ -655,7 +655,7 @@ class TestMotorBuracosCobertura:
         def patched(nfe):
             call_count[0] += 1
             if call_count[0] == 1:
-                raise Exception("Erro simulado")
+                raise RuntimeError("Erro simulado")
             return original(nfe)
 
         with patch.object(motor, "reconciliar_nfe", side_effect=patched):
@@ -1071,7 +1071,7 @@ class TestGeradorBuracosExtras:
         session.commit()
 
         # Patch estornar_nfe para lançar exceção
-        with patch.object(gerador, "estornar_nfe", side_effect=Exception("Erro DB")):
+        with patch.object(gerador, "estornar_nfe", side_effect=RuntimeError("Erro DB")):
             stats = gerador.gerar_todos()
         assert stats["erros"] >= 1
 
@@ -1086,7 +1086,7 @@ class TestGeradorBuracosExtras:
         session.commit()
 
         gerador = GeradorLancamentos(session)
-        with patch.object(gerador, "gerar_para_nfe", side_effect=Exception("Erro DB")):
+        with patch.object(gerador, "gerar_para_nfe", side_effect=RuntimeError("Erro DB")):
             stats = gerador.gerar_todos()
         assert stats["erros"] >= 1
 

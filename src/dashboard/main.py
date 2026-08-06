@@ -17,10 +17,14 @@ from html import escape as html_escape
 import csv
 import io
 import logging
-from fastapi import FastAPI, Depends, HTTPException, Query, Path
+import signal
+import time
+from fastapi import FastAPI, Depends, HTTPException, Query, Path, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +38,7 @@ from src.reconciliacao.motor import executar_reconciliacao, popular_pedidos_demo
 from src.contabilidade.gerador import executar_lancamentos
 from src.contabilidade.ecd import ExportadorECD
 from src.fiscal.apuracao import apurar_mes_dict
+from src.fiscal.validadores import mascara_cnpj
 from src.importador.manifestacao import executar_manifestacao_automatica, identificar_notas_pendentes
 from src.reconciliacao.gerador_pedidos import gerar_pedidos_para_notas
 from tests.gerador_sintetico import popular_nfe_sinteticas
@@ -44,6 +49,88 @@ app = FastAPI(
     description="Importação, reconciliação e gestão de notas fiscais eletronicas",
     version="0.2.0",
 )
+
+# CORS: apenas origens explicitas (configuravel via env)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Adiciona headers de seguranca OWASP C8 em todas as respostas."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "connect-src 'self'; frame-ancestors 'none';"
+    )
+    if settings.sefaz_ambiente == "producao":
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
+        )
+    return response
+
+
+@app.middleware("http")
+async def latency_logging_middleware(request: Request, call_next):
+    """Telemetria basica: loga latencia de cada request (ODD)."""
+    inicio = time.perf_counter()
+    response = await call_next(request)
+    duracao_ms = (time.perf_counter() - inicio) * 1000
+    logger.info(
+        "request method=%s path=%s status=%s duration_ms=%.1f",
+        request.method, request.url.path, response.status_code, duracao_ms,
+    )
+    return response
+
+
+def _graceful_shutdown(signum, frame):
+    """Signal handler para SIGTERM/SIGINT (graceful shutdown)."""
+    logger.info("Sinal %s recebido, iniciando graceful shutdown...", signum)
+    raise SystemExit(0)
+
+
+signal.signal(signal.SIGTERM, _graceful_shutdown)
+signal.signal(signal.SIGINT, _graceful_shutdown)
+
+
+# Rate limiting simples em memoria (sliding window por IP)
+# Para producao, usar Redis. Aqui usamos dict para MVP single-tenant.
+_rate_limit_store: dict[str, list[float]] = {}
+RATE_LIMIT_PATHS = {"/api/importacao/executar", "/api/reconciliacao/executar",
+                    "/api/lancamentos/executar", "/api/manifestacao/executar",
+                    "/api/teste/gerar-1000", "/api/pedidos/gerar"}
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Rate limit basico por IP em endpoints sensiveis (OWASP C7)."""
+    if request.url.path in RATE_LIMIT_PATHS:
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        window = 60.0  # 1 minuto
+        max_requests = settings.api_rate_limit
+        key = f"{client_ip}:{request.url.path}"
+        timestamps = _rate_limit_store.get(key, [])
+        # Remove entradas expiradas
+        timestamps = [t for t in timestamps if now - t < window]
+        if len(timestamps) >= max_requests:
+            return JSONResponse(
+                status_code=429,
+                content={"status": "erro", "mensagem": "Rate limit excedido. Tente novamente em alguns segundos."},
+            )
+        timestamps.append(now)
+        _rate_limit_store[key] = timestamps
+    return await call_next(request)
 
 CSS = """
 body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
@@ -157,14 +244,30 @@ def _validar_chave(chave: str) -> bool:
 
 
 @app.get("/health")
-async def health():
-    return {
-        "status": "ok",
-        "service": "contabilidade",
-        "version": "0.2.0",
-        "timestamp": datetime.now().isoformat(),
-        "mock_sefaz": settings.mock_sefaz,
-    }
+async def health(session: Session = Depends(get_session)):
+    """Health check com verificacao de dependencias (DB e Redis)."""
+    from sqlalchemy import func as _func
+    checks = {"service": "contabilidade", "version": "0.2.0",
+              "timestamp": datetime.now().isoformat(),
+              "mock_sefaz": settings.mock_sefaz}
+    # Verifica DB
+    try:
+        session.query(_func.count(Nfe.id)).scalar()
+        checks["db"] = "ok"
+    except (SQLAlchemyError, RuntimeError) as e:
+        checks["db"] = f"erro: {e}"
+    # Verifica Redis (best-effort, nao bloqueante)
+    try:
+        from src.importador.rate_limit import get_redis
+        r = get_redis()
+        r.ping()
+        checks["redis"] = "ok"
+    except Exception as e:
+        checks["redis"] = f"indisponivel: {e}"
+    # Status geral
+    all_ok = checks["db"] == "ok"
+    checks["status"] = "ok" if all_ok else "degradado"
+    return checks
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -181,7 +284,7 @@ async def dashboard(session: Session = Depends(get_session)):
             Nfe.status_autorizacao == "cancelada"
         ).scalar() or 0
         notas = session.query(Nfe).order_by(Nfe.data_emissao.desc()).limit(50).all()
-    except Exception as e:
+    except (SQLAlchemyError, RuntimeError) as e:
         logger.error(f"Erro ao carregar dashboard: {e}")
         total_notas = total_participantes = total_reconciliacoes = total_lancamentos = 0
         valor_total = 0
@@ -518,7 +621,7 @@ async def detalhe_nfe(chave: str, session: Session = Depends(get_session)):
     <h2>Emitente</h2>
     <div class="detalhe-box">
         <div class="detalhe-grid">
-            <div class="detalhe-item"><div class="detalhe-label">CNPJ</div><div class="detalhe-value">{_esc(emitente.cnpj_cpf) if emitente else '-'}</div></div>
+            <div class="detalhe-item"><div class="detalhe-label">CNPJ</div><div class="detalhe-value">{_esc(mascara_cnpj(emitente.cnpj_cpf)) if emitente else '-'}</div></div>
             <div class="detalhe-item"><div class="detalhe-label">Nome</div><div class="detalhe-value">{_esc(emitente.nome) if emitente else '-'}</div></div>
             <div class="detalhe-item"><div class="detalhe-label">Municipio</div><div class="detalhe-value">{_esc(emitente.municipio) if emitente else '-'}</div></div>
             <div class="detalhe-item"><div class="detalhe-label">UF</div><div class="detalhe-value">{_esc(emitente.uf) if emitente else '-'}</div></div>
@@ -528,7 +631,7 @@ async def detalhe_nfe(chave: str, session: Session = Depends(get_session)):
     <h2>Destinatario</h2>
     <div class="detalhe-box">
         <div class="detalhe-grid">
-            <div class="detalhe-item"><div class="detalhe-label">CNPJ</div><div class="detalhe-value">{_esc(destinatario.cnpj_cpf) if destinatario else '-'}</div></div>
+            <div class="detalhe-item"><div class="detalhe-label">CNPJ</div><div class="detalhe-value">{_esc(mascara_cnpj(destinatario.cnpj_cpf)) if destinatario else '-'}</div></div>
             <div class="detalhe-item"><div class="detalhe-label">Nome</div><div class="detalhe-value">{_esc(destinatario.nome) if destinatario else '-'}</div></div>
         </div>
     </div>
@@ -583,7 +686,7 @@ async def detalhe_nfe(chave: str, session: Session = Depends(get_session)):
 @app.get("/crossover", response_class=HTMLResponse)
 async def crossover_lista(session: Session = Depends(get_session)):
     """Visao geral de crossover: ligacoes entre documentos."""
-    notas = session.query(Nfe).order_by(Nfe.data_emissao.desc()).all()
+    notas = session.query(Nfe).order_by(Nfe.data_emissao.desc()).limit(200).all()
 
     cards_html = ""
     for n in notas:
@@ -841,19 +944,19 @@ async def api_export_csv(
 
     if tipo == "notas":
         writer.writerow(["Número", "Chave", "Data", "Emitente", "CNPJ", "Valor", "Status", "Origem", "Protocolo", "Manifestação"])
-        for n in session.query(Nfe).order_by(Nfe.numero_nota).all():
+        for n in session.query(Nfe).order_by(Nfe.numero_nota).limit(10000).all():
             writer.writerow([
                 n.numero_nota, n.chave_acesso,
                 n.data_emissao.strftime("%d/%m/%Y") if n.data_emissao else "",
                 n.emitente.nome if n.emitente else "",
-                n.emitente.cnpj_cpf if n.emitente else "",
+                mascara_cnpj(n.emitente.cnpj_cpf) if n.emitente else "",
                 _to_float(n.valor_total) if n.valor_total else 0,
                 n.status_autorizacao, n.origem or "sefaz",
                 n.protocolo or "", n.manifestacao_destinatario or "",
             ])
     elif tipo == "reconciliacoes":
         writer.writerow(["ID", "NF-e", "Pedido", "Status", "Tipo", "Divergencias", "Data"])
-        for r in session.query(Reconciliacao).all():
+        for r in session.query(Reconciliacao).limit(10000).all():
             writer.writerow([
                 r.id, r.nfe.numero_nota if r.nfe else "",
                 r.pedido.numero if r.pedido else "",
@@ -863,7 +966,7 @@ async def api_export_csv(
             ])
     elif tipo == "lancamentos":
         writer.writerow(["ID", "NF-e", "Data", "Debito", "Credito", "Valor", "Historico", "Estornado"])
-        for l in session.query(LancamentoContabil).order_by(LancamentoContabil.id).all():
+        for l in session.query(LancamentoContabil).order_by(LancamentoContabil.id).limit(10000).all():
             writer.writerow([
                 l.id, l.nfe.numero_nota if l.nfe else "",
                 l.data_lancamento.strftime("%d/%m/%Y") if l.data_lancamento else "",
@@ -964,7 +1067,7 @@ async def api_executar_reconciliacao():
     try:
         stats = executar_reconciliacao()
         return {"status": "ok", "estatisticas": stats}
-    except Exception as e:
+    except (SQLAlchemyError, ValueError, RuntimeError) as e:
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
 
@@ -984,14 +1087,14 @@ async def api_popular_pedidos():
     try:
         resultado = popular_pedidos_demo()
         return {"status": "ok", "resultado": resultado}
-    except Exception as e:
+    except (SQLAlchemyError, ValueError, RuntimeError) as e:
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
 
 @app.get("/api/reconciliacoes")
 async def api_listar_reconciliacoes(session: Session = Depends(get_session)):
     """Lista todas as reconciliacoes."""
-    recs = session.query(Reconciliacao).all()
+    recs = session.query(Reconciliacao).limit(10000).all()
     return {"total": len(recs), "reconciliacoes": [
         {
             "id": r.id, "status": r.status, "tipo_match": r.tipo_match,
@@ -1014,14 +1117,14 @@ async def api_executar_lancamentos():
     try:
         stats = executar_lancamentos()
         return {"status": "ok", "estatisticas": stats}
-    except Exception as e:
+    except (SQLAlchemyError, ValueError, RuntimeError) as e:
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
 
 @app.get("/api/lancamentos")
 async def api_listar_lancamentos(session: Session = Depends(get_session)):
     """Lista todos os lançamentos contábeis."""
-    lans = session.query(LancamentoContabil).order_by(LancamentoContabil.data_lancamento.desc()).all()
+    lans = session.query(LancamentoContabil).order_by(LancamentoContabil.data_lancamento.desc()).limit(10000).all()
     return {"total": len(lans), "lançamentos": [
         {
             "id": l.id,
@@ -1054,7 +1157,7 @@ async def api_dashboard(session: Session = Depends(get_session)):
         notas_canceladas = session.query(func.count(Nfe.id)).filter(
             Nfe.status_autorizacao == "cancelada"
         ).scalar() or 0
-    except Exception:
+    except (SQLAlchemyError, RuntimeError):
         total_notas = notas_pendentes = notas_match = notas_divergent = notas_canceladas = 0
         valor_total = 0
     return {
@@ -1069,7 +1172,7 @@ async def api_executar_importacao():
     try:
         stats = executar_importacao()
         return {"status": "ok", "estatisticas": stats}
-    except Exception as e:
+    except (SQLAlchemyError, ValueError, RuntimeError, OSError) as e:
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
 
@@ -1087,8 +1190,8 @@ async def api_detalhe_nfe(chave: str, session: Session = Depends(get_session)):
         "natureza_operacao": nfe.natureza_operacao,
         "valor_total": _to_float(nfe.valor_total) if nfe.valor_total else 0,
         "status": nfe.status_autorizacao, "nsu": nfe.nsu,
-        "emitente": {"cnpj": nfe.emitente.cnpj_cpf, "nome": nfe.emitente.nome} if nfe.emitente else None,
-        "destinatario": {"cnpj": nfe.destinatario.cnpj_cpf, "nome": nfe.destinatario.nome} if nfe.destinatario else None,
+        "emitente": {"cnpj": mascara_cnpj(nfe.emitente.cnpj_cpf), "nome": nfe.emitente.nome} if nfe.emitente else None,
+        "destinatario": {"cnpj": mascara_cnpj(nfe.destinatario.cnpj_cpf), "nome": nfe.destinatario.nome} if nfe.destinatario else None,
         "itens": [
             {"numero": i.numero_item, "codigo": i.codigo_produto, "descricao": i.descricao,
              "ncm": i.ncm, "cfop": i.cfop, "quantidade": _to_float(i.quantidade) if i.quantidade else 0,
@@ -1128,7 +1231,7 @@ async def api_apuracao_mensal(
         return {"status": "ok", **resultado}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except (SQLAlchemyError, RuntimeError) as e:
         logger.error(f"Erro na apuração: {e}")
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
@@ -1139,7 +1242,7 @@ async def api_gerar_pedidos():
     try:
         resultado = gerar_pedidos_para_notas()
         return {"status": "ok", "estatisticas": resultado}
-    except Exception as e:
+    except (SQLAlchemyError, ValueError, RuntimeError) as e:
         logger.error(f"Erro ao gerar pedidos: {e}")
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
@@ -1150,7 +1253,7 @@ async def api_manifestacao_lote():
     try:
         resultado = executar_manifestacao_automatica()
         return {"status": "ok", **resultado}
-    except Exception as e:
+    except (SQLAlchemyError, ValueError, RuntimeError, OSError) as e:
         logger.error(f"Erro na manifestação: {e}")
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 
@@ -1170,7 +1273,7 @@ async def api_manifestacao_pendentes(session: Session = Depends(get_session)):
             "total_fora_prazo": len(resultado["fora_prazo_ciencia"]),
             "total_pendente_confirmacao": len(resultado["pendente_confirmacao"]),
         }
-    except Exception as e:
+    except (SQLAlchemyError, KeyError, RuntimeError) as e:
         logger.error(f"Erro ao listar pendentes: {e}")
         return JSONResponse(status_code=500, content={"status": "erro", "mensagem": str(e)})
 

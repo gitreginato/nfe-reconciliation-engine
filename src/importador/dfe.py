@@ -12,7 +12,7 @@ from datetime import datetime
 from decimal import Decimal
 import httpx
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.config import settings
 from src.persistencia.models import (
@@ -35,15 +35,30 @@ logger = logging.getLogger(__name__)
 class ImportadorDFe:
     """Importa documentos fiscais da SEFAZ (ou mock SEFAZ)."""
 
+    # Allowlist de hosts permitidos para requests HTTP (protecao SSRF - OWASP C10)
+    _ALLOWED_HOSTS = {"localhost", "127.0.0.1", "mock-sefaz", "sefaz-mock"}
+
     def __init__(self, session: Session | None = None):
         self.session = session or SessionClass()
         self._own_session = session is None
         if settings.mock_sefaz:
             self.base_url = settings.sefaz_mock_url
+            self._validar_url_ssrf(self.base_url)
         else:
             self.base_url = None  # producao usa erpbrasil.edoc (fase futura)
         self.client = httpx.Client(timeout=settings.sefaz_timeout)
         self.rate_limiter = RateLimiter(max_calls=settings.sefaz_rate_limit, window_seconds=1.0)
+
+    @classmethod
+    def _validar_url_ssrf(cls, url: str) -> None:
+        """Valida URL contra allowlist de hosts para prevenir SSRF (OWASP C10)."""
+        if not url:
+            return
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        host = parsed.hostname or ""
+        if host not in cls._ALLOWED_HOSTS:
+            raise ValueError(f"Host '{host}' nao permitido pela allowlist SSRF")
 
     def close(self):
         self.client.close()
@@ -238,6 +253,7 @@ class ImportadorDFe:
         self.session.flush()
 
         # Persistir itens
+        itens_criados: list[NfeItem] = []
         for i, item_data in enumerate(resumo.get("itens", []), 1):
             item = NfeItem(
                 nfe_id=nfe.id,
@@ -260,13 +276,15 @@ class ImportadorDFe:
                 vcofins=Decimal(str(item_data.get("vcofins", 0))) if item_data.get("vcofins") else None,
             )
             self.session.add(item)
+            itens_criados.append(item)
 
         # Se tem IBS/CBS, aplicar somente parametrização com fonte vigente.
         if resumo.get("tem_ibscbs"):
             aliquota = get_aliquota_ibscbs(data_emissao.year)
             if aliquota["ibs"] is not None and aliquota["cbs"] is not None:
                 percentual_total = aliquota["ibs"] + aliquota["cbs"]
-                for item in self.session.query(NfeItem).filter_by(nfe_id=nfe.id).all():
+                # Aplica direto nos objetos em memoria (evita N+1 query)
+                for item in itens_criados:
                     item.vbc_ibscbs = item.valor_total
                     item.aliquota_ibscbs = percentual_total
                     item.vibscbs = (
@@ -336,7 +354,7 @@ class ImportadorDFe:
                     else:
                         stats["duplicadas"] += 1
 
-                except Exception as e:
+                except (IntegrityError, ValueError, KeyError, RuntimeError) as e:
                     self.session.rollback()
                     logger.error(f"Erro ao importar nota {doc.get('chave', '?')[:20]}...: {e}")
                     stats["erros"] += 1
@@ -344,7 +362,7 @@ class ImportadorDFe:
             # Salvar NSU final
             self._salvar_nsu(resultado.get("ultimo_nsu", 0), stats["importadas"], "concluido")
 
-        except Exception as e:
+        except (SQLAlchemyError, httpx.HTTPError, RuntimeError) as e:
             logger.error(f"Erro na importação: {e}")
             self._salvar_nsu(self._get_ultimo_nsu(), 0, "erro", str(e))
             stats["erros"] += 1
@@ -357,7 +375,7 @@ def executar_importacao() -> dict:
     importador = ImportadorDFe()
     try:
         return importador.importar_tudo()
-    except Exception:
+    except (SQLAlchemyError, httpx.HTTPError, RuntimeError):
         importador.session.rollback()
         raise
     finally:

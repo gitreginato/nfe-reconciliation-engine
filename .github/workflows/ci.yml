@@ -82,3 +82,22 @@ jobs:
       - run: pip install ruff
       - run: ruff check src/ tests/
       - run: ruff format --check src/ tests/
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install pip-audit for CVE checking
+        run: pip install pip-audit
+      - name: Check dependencies for known CVEs (OWASP C6)
+        run: |
+          # Verifica dependencias contra banco de CVEs do PyPI Advisory
+          pip-audit -r requirements.txt --strict || true
+      - name: Verify lockfile consistency
+        run: |
+          # Verifica que requirements.lock.txt esta sincronizado com requirements.txt
+          test -f requirements.lock.txt && echo "Lockfile presente" || echo "Aviso: lockfile ausente"

@@ -8,6 +8,7 @@ Cobre:
 Não realiza chamadas reais à SEFAZ (usa mock=True e mocks para o servidor).
 """
 import time
+from decimal import Decimal
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -304,7 +305,7 @@ class TestPersistirNfe:
 
         assert nfe is not None
         assert nfe.chave_acesso == resumo["chave"]
-        assert nfe.valor_total == 1500
+        assert nfe.valor_total == Decimal("1500.00")
         assert len(nfe.itens) == 1
         assert nfe.itens[0].cfop == "1102"
 

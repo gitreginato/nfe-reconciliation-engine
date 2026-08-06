@@ -4,16 +4,16 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Banco de dados
+    # Banco de dados (default aponta para dev local; em producao usar DATABASE_URL)
     database_url: str = "postgresql+psycopg2://contabilidade:contabilidade_dev@localhost:5432/contabilidade"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
-    # Certificado digital
+    # Certificado digital (sempre via env, nunca commitar)
     certificado_a1_path: str = ""
     certificado_a1_senha: str = ""
-    cnpj_consultado: str = "12345678000190"
+    cnpj_consultado: str = ""  # obrigatorio em producao via env
     destinatario_nome: str = "Minha Empresa Ltda"
 
     # SEFAZ
@@ -29,8 +29,14 @@ class Settings(BaseSettings):
     tolerancia_data_dias: int = 15
 
     # Dashboard
-    dashboard_host: str = "0.0.0.0"
+    dashboard_host: str = "127.0.0.1"  # so localhost por default
     dashboard_port: int = 8000
+
+    # CORS: lista de origens permitidas (separadas por virgula no env)
+    cors_allowed_origins: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
+
+    # Rate limit da API do dashboard (requisicoes por minuto por IP)
+    api_rate_limit: int = 60
 
     # Logging
     log_level: str = "INFO"

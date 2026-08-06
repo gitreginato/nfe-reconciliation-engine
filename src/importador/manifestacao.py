@@ -21,6 +21,7 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.persistencia.models import Nfe, NfeEvento
 from src.fiscal.validadores import validar_prazo_manifestacao
@@ -192,7 +193,7 @@ def manifestar_lote(
                         f"Erro ao manifestar NF-e {nfe.chave_acesso[:20]}...: {resultado}"
                     )
 
-            except Exception as e:
+            except (SQLAlchemyError, ValueError, RuntimeError) as e:
                 session.rollback()
                 stats["erros"] += 1
                 logger.error(

@@ -9,6 +9,7 @@ from decimal import Decimal
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.config import settings
 from src.persistencia.models import (
@@ -127,9 +128,17 @@ class MotorReconciliacao:
                     })
 
         # Divergência por item (preço unitario)
+        # Guarda de tamanho: se pedido tem muitos itens, usa dict indexado por codigo
+        pedido_itens_by_codigo = {}
+        if pedido.itens and len(pedido.itens) > 100:
+            for pi in pedido.itens:
+                if pi.codigo_produto:
+                    pedido_itens_by_codigo[pi.codigo_produto] = pi
         for item in nfe.itens:
             pedido_item = None
-            if pedido.itens:
+            if pedido_itens_by_codigo:
+                pedido_item = pedido_itens_by_codigo.get(item.codigo_produto)
+            elif pedido.itens:
                 for pi in pedido.itens:
                     if pi.codigo_produto and pi.codigo_produto == item.codigo_produto:
                         pedido_item = pi
@@ -223,7 +232,7 @@ class MotorReconciliacao:
                     stats["divergent"] += 1
                 elif rec.status == "pending":
                     stats["pending"] += 1
-            except Exception as e:
+            except (SQLAlchemyError, ValueError, RuntimeError) as e:
                 self.session.rollback()
                 logger.error(f"Erro ao reconciliar NF-e {nfe.chave_acesso[:20]}...: {e}")
                 stats["erros"] += 1

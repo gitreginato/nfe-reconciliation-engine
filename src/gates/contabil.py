@@ -30,8 +30,9 @@ def _find_python_files(project_path: str) -> list[str]:
 
 def _read_file(path: str) -> str:
     try:
-        return open(path, encoding="utf-8").read()
-    except Exception:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except OSError:
         return ""
 
 
