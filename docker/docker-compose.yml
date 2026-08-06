@@ -1,0 +1,87 @@
+# Docker Compose - Sistema de Contabilidade com NF-e
+# Ambientes: dev (este arquivo) e test (docker-compose.test.yml)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: contabilidade-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-contabilidade}
+      POSTGRES_USER: ${POSTGRES_USER:-contabilidade}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-contabilidade_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../schemas/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-contabilidade}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: contabilidade-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  sefaz-mock:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: contabilidade-sefaz-mock
+    environment:
+      MOCK_SEFAZ: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - ../src:/app/src:ro
+    command: uvicorn src.mock_sefaz.main:app --host 0.0.0.0 --port 9000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: contabilidade-app
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-contabilidade}:${POSTGRES_PASSWORD:-contabilidade_dev}@postgres:5432/${POSTGRES_DB:-contabilidade}
+      REDIS_URL: redis://redis:6379/0
+      MOCK_SEFAZ: "true"
+      SEFAZ_MOCK_URL: http://sefaz-mock:9000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../schemas:/app/schemas:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      sefaz-mock:
+        condition: service_healthy
+    command: uvicorn src.dashboard.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,68 @@
+# Docker Compose - Ambiente de testes
+# Sobe PostgreSQL + Redis + mock SEFAZ para rodar pytest
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: contabilidade-postgres-test
+    environment:
+      POSTGRES_DB: contabilidade_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: contabilidade-redis-test
+    ports:
+      - "6380:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  sefaz-mock:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: contabilidade-sefaz-mock
+    environment:
+      MOCK_SEFAZ: "true"
+    ports:
+      - "9000:9000"
+    command: uvicorn src.mock_sefaz.main:app --host 0.0.0.0 --port 9000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  app-test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: contabilidade-app-test
+    environment:
+      DATABASE_URL: postgresql+psycopg2://test:test@postgres-test:5432/contabilidade_test
+      REDIS_URL: redis://redis-test:6379/0
+      MOCK_SEFAZ: "true"
+      SEFAZ_MOCK_URL: http://sefaz-mock:9000
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      sefaz-mock:
+        condition: service_healthy
+    command: pytest --cov=src --cov-report=term-missing
