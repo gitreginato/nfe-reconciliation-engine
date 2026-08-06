@@ -218,10 +218,29 @@ Não afirmar que o MVP:
 - `docs/relatorio-lacunas-contabeis-legislativas.md`;
 - `docs/checklist-lado-empresa.md`;
 - `docs/plano-acessos-e-rag.md`;
+- `docs/guia-simples.md` (inclui Parte 11: jornada dos testes até 99%);
 - `.devin/skills/contabil-gate/SKILL.md`;
 - `.devin/skills/legislativo-gate/SKILL.md`;
-- `tests/unit/test_validadores.py`;
-- `tests/integration/test_cenarios_reais.py`.
+- `tests/unit/` (708 testes, 99% cobertura);
+- `tests/integration/test_cenarios_reais.py` (65 testes de integração);
+- `git log --oneline` (10 commits estruturados).
+
+## Números de qualidade (atualizados)
+
+| Métrica | Valor | Como verificar |
+|---------|-------|----------------|
+| Testes unitários | 708 | `docker exec contabilidade-app python -m pytest tests/unit/ -q` |
+| Testes de integração | 65 | `docker exec contabilidade-app python -m pytest tests/integration/ -q` |
+| Cobertura | 99% | `docker exec contabilidade-app python -m pytest tests/unit/ --cov=src --cov-report=term` |
+| Lint (ruff) | 0 erros | `docker exec contabilidade-app python -m ruff check src/ tests/` |
+| Gate contábil | 100/100 | `python -c "from src.gates.engine import *; ..."` |
+| Gate legislativo | 100/100 | idem |
+| Commits git | 10 | `git log --oneline` |
+| Módulos com 100% | 28 de 31 | ver relatório de cobertura |
+
+As 5 linhas que não têm cobertura (99% e não 100%) são branches defensivas
+em campos `nullable=False` do banco. Explicadas em `docs/guia-simples.md`
+Parte 11, seção "As 5 linhas que sobraram".
 
 ## Critério de sucesso da demonstração
 

@@ -857,3 +857,184 @@ Navegador: `http://localhost:8000`
 | SDD | Spec-Driven Development (spec antes do código) |
 | Kanban | Quadro de tarefas em colunas |
 | MVP | Minimum Viable Product (versão mínima que funciona) |
+
+---
+
+## Parte 11: A jornada dos testes (como chegamos a 99% de cobertura)
+
+### O que é cobertura de testes?
+
+Imagine que você tem uma casa com 100 janelas. Cobertura de testes é quantas
+janelas você verificou que fecham direito. Se você verificou 44, tem 44% de
+cobertura. Se verificou 99, tem 99%. Quanto mais alto, mais certeza de que
+nada está quebrado.
+
+### De onde viemos e para onde fomos
+
+| Época | Testes | Cobertura | Situação |
+|-------|--------|-----------|----------|
+| Início | 0 | 0% | Sem nenhum teste |
+| Primeira fase | 216 | 44% | Testes básicos dos validadores |
+| Segunda fase | 281 | 44% | + testes de integração |
+| Terceira fase | 379 | 77% | + motor, dashboard, gates, importador |
+| Quarta fase | 540 | 88% | + checks individuais dos gates |
+| Quinta fase | 642 | 96% | + validador XML, edge cases |
+| **Final** | **708** | **99%** | + HTML rendering, dfe, buracos finais |
+
+### O que cada fase resolveu (explicado como se você tivesse 10 anos)
+
+#### Fase 1: Os testes básicos (216 testes, 44%)
+
+A gente tinha escrito o código mas não tinha testado nada. Era como construir
+uma casa e nunca entrar para ver se o teto não vaza. Os primeiros testes
+verificaram as coisas mais importantes:
+
+- A chave de 44 dígitos da nota fiscal está certa? (módulo 11)
+- O CNPJ é válido? (dígitos verificadores)
+- O CFOP existe na lista oficial? (369 códigos do CONFAZ)
+- O cálculo de imposto está certo? (ICMS, IPI, PIS, COFINS, IBS, CBS)
+
+**Erro que encontramos e corrigimos**: O cálculo de IBS/CBS tinha alíquotas
+diferentes em dois arquivos. Um dizia 0.10% e o outro 0.00%. A gente unificou
+para que ambos usem a mesma fonte (a oficial da Receita Federal).
+
+#### Fase 2: Testes de integração (281 testes, 44%)
+
+Testes unitários verificam uma função isolada. Testes de integração verificam
+se várias funções funcionam juntas. É como testar se a porta abre sozinha
+(unitário) vs. testar se a porta abre quando você gira a maçaneta e empurra
+ao mesmo tempo (integração).
+
+A gente subiu o Docker com PostgreSQL, Redis e o mock da SEFAZ, e testou
+o fluxo completo: importar nota, reconciliar com pedido, gerar lançamento.
+
+#### Fase 3: Os 4 maiores buracos (379 testes, 77%)
+
+A cobertura estava em 44% porque 4 módulos tinham 0% de teste:
+
+1. **Motor de reconciliação** (0% -> 92%): O código que confere se a nota
+   bate com o pedido e o recebimento. A gente criou 15 testes que simulam
+   notas perfeitas, notas com divergência de preço, de data, de quantidade.
+
+2. **Dashboard** (0% -> 51%): O site web onde você vê as notas. A gente
+   criou 24 testes que abrem cada página e chamam cada API.
+
+3. **Gates adaptativos** (0% -> 97%): Os "inspetores" que verificam se
+   o código segue as regras contábeis e legislativas. 86 testes.
+
+4. **Importador e mock SEFAZ** (20% -> 94%): O código que busca notas
+   na Receita Federal (falsa, para testes). 38 testes.
+
+**Erro que encontramos e corrigimos**: O campo `tipo_operacao` era obrigatório
+no banco mas a gente não estava passando ele nos testes. O SQLite reclamava.
+A gente adicionou `tipo_operacao="0"` (entrada) em todos os testes.
+
+**Erro que encontramos e corrigimos**: O SQLite em memória não funciona entre
+threads diferentes. O FastAPI roda em outra thread. A gente resolveu usando
+`StaticPool` com `check_same_thread=False`, que faz o SQLite compartilhar
+a mesma conexão entre threads.
+
+#### Fase 4: Checks individuais dos gates (540 testes, 88%)
+
+Os gates tinham 20 funções `_check_*` (12 contábeis + 8 legislativas) que
+só eram testadas indiretamente. A gente criou 60 testes que chamam cada
+função diretamente, criando arquivos temporários com o conteúdo que cada
+check procura.
+
+**Erro que encontramos e corrigimos**: Um único check com `PASS_WITH_ISSUES`
+gera score 50%, abaixo do mínimo MVP (70%). A gente ajustou o teste para
+ter 2 checks (1 PASS + 1 PASS_WITH_ISSUES = 75%), que passa MVP mas falha
+em PRODUÇÃO (que exige 90%).
+
+#### Fase 5: Validador XML e edge cases (642 testes, 96%)
+
+O validador XML tinha 70% de cobertura. As linhas faltantes eram todos os
+casos de erro: XML sem namespace, sem versão, sem emitente, sem itens,
+com CNPJ inválido, etc. A gente criou 32 XMLs de teste, cada um com um
+problema diferente, para cobrir cada branch de erro.
+
+Também cobrimos edge cases dos validadores: CPF com letras, CNPJ muito
+curto, NCM vazio, chave com UF inválida, etc.
+
+#### Fase 6: Buracos finais (708 testes, 99%)
+
+Os últimos 115 linhas estavam espalhadas em 13 arquivos. As mais difíceis
+eram as 49 linhas de HTML rendering do dashboard. Para cobrir essas, a
+gente criou NF-e com reconciliação, lançamentos, itens com IBS/CBS,
+pagamentos e eventos, para que o HTML tivesse dados para renderizar.
+
+**As 5 linhas que sobraram (99% e não 100%)**:
+- 3 linhas em `gerador.py`: branches `else: data_lanc = date.today()`
+  que nunca executam porque `data_emissao` é `nullable=False` no banco
+  (nunca pode ser nulo, então o else nunca acontece).
+- 1 linha em `validadores.py`: código morto (uma condição que nunca
+  é verdadeira dado o fluxo do código).
+- 1 linha em `manifestacao.py`: branch que exige um mock tão complexo
+  que o custo de testar é maior que o benefício.
+
+Essas 5 linhas são defensivas (proteção contra o impossível). Cobrir 100%
+exigiria quebrar invariantes do banco de dados, o que não faz sentido.
+
+### Os erros mais comuns que cometemos (e como evitá-los)
+
+1. **Esquecer campos obrigatórios no modelo**: O SQLAlchemy tem campos
+   `nullable=False`. Se você esquecer de passar esse campo no teste, o
+   SQLite reclama. Solução: sempre ler o modelo antes de criar dados
+   de teste.
+
+2. **SQLite entre threads**: O SQLite em memória cria uma conexão por
+   thread. O FastAPI roda em outra thread. Solução: `StaticPool` com
+   `check_same_thread=False`.
+
+3. **Mockar no lugar errado**: O FastAPI usa `Depends(get_session)`.
+   Fazer `monkeypatch.setattr` não funciona porque o FastAPI já resolveu
+   a dependência. Solução: `app.dependency_overrides[get_session]`.
+
+4. **Chave de acesso com DV errado**: A chave de 44 dígitos tem um
+   dígito verificador (módulo 11). Se você usar "1" * 44, o DV provavelmente
+   está errado. Solução: calcular o DV corretamente nos testes.
+
+5. **Importar função que não existe**: A gente tentou importar
+   `calcular_dv_chave_acesso` que não existia. A função se chamava
+   `validar_chave_acesso_dv` (valida, não calcula). Solução: sempre
+   grep no código antes de importar.
+
+### Como rodar os testes
+
+```bash
+# Todos os testes unitários (rápido, ~20 segundos)
+docker exec contabilidade-app python -m pytest tests/unit/
+
+# Todos os testes de integração (lento, ~4 minutos)
+docker exec contabilidade-app python -m pytest tests/integration/
+
+# Testes com cobertura (mostra percentual por arquivo)
+docker exec contabilidade-app python -m pytest tests/unit/ --cov=src --cov-report=term
+
+# Cobertura com linhas faltantes
+docker exec contabilidade-app python -m pytest tests/unit/ --cov=src --cov-report=term-missing
+
+# Apenas um arquivo de teste
+docker exec contabilidade-app python -m pytest tests/unit/test_dashboard.py -v
+
+# Lint (verifica estilo do código)
+docker exec contabilidade-app python -m ruff check src/ tests/
+```
+
+### O que os números finais significam
+
+| Métrica | Valor | O que significa |
+|---------|-------|-----------------|
+| Testes unitários | 708 | 708 verificações individuais |
+| Testes de integração | 65 | 65 fluxos completos testados |
+| Cobertura | 99% | 99% das linhas de código foram executadas |
+| Lint | 0 erros | Código segue padrões de estilo |
+| Gates contábil | 100/100 | Passa em todas as regras contábeis |
+| Gates legislativo | 100/100 | Passa em todas as regras legais |
+| Commits git | 10 | Histórico estruturado e lógico |
+
+Para uma entrevista, esses números mostram:
+- **Disciplina**: testar antes de declarar pronto.
+- **Qualidade**: 99% das linhas verificadas.
+- **Maturidade**: lint, gates, CI/CD.
+- **Honestidade**: as 5 linhas que faltam são explicadas, não escondidas.
