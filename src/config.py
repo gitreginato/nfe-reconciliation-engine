@@ -1,6 +1,6 @@
 """Configuracao central do sistema."""
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     dashboard_port: int = 8000
 
     # CORS: lista de origens permitidas (separadas por virgula no env)
-    cors_allowed_origins: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
+    cors_allowed_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
 
     # Rate limit da API do dashboard (requisicoes por minuto por IP)
     api_rate_limit: int = 60
@@ -41,9 +41,12 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Converte a string comma-separated do env em lista."""
+        return [o.strip() for o in self.cors_allowed_origins.split(",") if o.strip()]
 
 
 settings = Settings()
